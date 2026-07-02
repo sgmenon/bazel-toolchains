@@ -1,0 +1,56 @@
+# Copyright (c) Sid Menon 2026
+# Original Author: Sid Menon (sidgmenon@gmail.com)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+module(
+    name = "bazel-toolchains",
+    version = "1.0.0",
+)
+
+# Dependencies
+# ============
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "aspect_bazel_lib", version = "2.22.5")
+bazel_dep(name = "platforms", version = "1.0.0")
+bazel_dep(name = "rules_cc", version = "0.2.14")
+
+# For building examples: Dev Dependencies
+# ============
+gcc_toolchain_extension = use_extension("//gcc_toolchain:toolchain_extension.bzl", "gcc_toolchain_extension", dev_dependency = True)
+
+[
+    [
+        [
+            gcc_toolchain_extension.load_toolchain(
+                arch = arch,
+                gcc_version = gcc_version,
+            ),
+            use_repo(
+                gcc_toolchain_extension,
+                "gcc_toolchain_{arch}-{gcc_version}".format(
+                    arch = arch,
+                    gcc_version = gcc_version,
+                ),
+            ),
+        ]
+        for arch in [
+            "x86_64",
+            "aarch64",
+        ]
+    ]
+    for gcc_version in [
+        "gcc11",
+        "gcc13",
+    ]
+]

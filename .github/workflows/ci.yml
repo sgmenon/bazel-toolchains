@@ -1,0 +1,99 @@
+# Copyright (c) Sid Menon 2026
+# Original Author: Sid Menon (sidgmenon@gmail.com), Aspect.dev
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: CI Sysroot Builders
+
+on:
+  pull_request:
+    branches:
+      - main
+      - release/**
+
+concurrency:
+  group: dockers-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions: read-all
+
+jobs:
+  test_examples:
+    name: Build & run examples (${{ matrix.config }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - config: x86_64_gcc13
+            bazel_config: gcc13
+            can_run: true
+          - config: x86_64_gcc11
+            bazel_config: gcc11
+            can_run: true
+          - config: aarch64_gcc13
+            bazel_config: aarch64
+            can_run: false
+          - config: aarch64_gcc11
+            bazel_config: aarch64_gcc11
+            can_run: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-${{ matrix.config }}
+          repository-cache: true
+      - name: Build examples
+        run: |
+          bazel build --config=${{ matrix.bazel_config }} \
+            //examples:hello-world \
+            //examples:linux-compilation-test
+      - name: Run hello-world
+        if: matrix.can_run
+        run: |
+          bazel run --config=${{ matrix.bazel_config }} //examples:hello-world
+
+  build_sysroots_x86_64:
+    uses: ./.github/workflows/build_sysroot.yml
+    with:
+      arch: x86_64
+      image_type: base
+      version: 2.0
+    secrets: inherit
+
+  build_sysroots_x86_64_gcc11:
+    uses: ./.github/workflows/build_sysroot.yml
+    with:
+      arch: x86_64
+      image_type: base
+      gcc_version: 11.3.0
+      version: 2.0
+    secrets: inherit
+
+  build_sysroots_aarch64:
+    uses: ./.github/workflows/build_sysroot.yml
+    with:
+      arch: aarch64
+      image_type: base
+      version: 2.0
+    secrets: inherit
+
+  build_sysroots_x86_64_gcc13:
+    uses: ./.github/workflows/build_sysroot.yml
+    with:
+      arch: x86_64
+      image_type: base
+      gcc_version: 13.4.0
+      version: 2.0
+    secrets: inherit
