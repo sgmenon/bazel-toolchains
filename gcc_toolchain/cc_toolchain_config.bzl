@@ -436,7 +436,7 @@ def _impl(ctx):
         ],
     )
 
-    sanitizer_extra_ldflags = []
+    sanitizer_extra_ldflags = ["-Wl,-rpath,$ORIGIN/../lib64"]
     tsan_extra_cflags = []
     compiler_major_version = int(ctx.attr.compiler_version.replace("gcc", ""))
     if compiler_major_version < 10:
